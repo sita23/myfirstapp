@@ -7,6 +7,15 @@ class Sgk extends Model
     protected $id;
     protected $name;
 
+    public function initialize()
+    {
+        $this->hasMany(
+            'id',
+            'Patient',
+            'sgk_id'
+        );
+    }
+
     /**
      * @return mixed
      */

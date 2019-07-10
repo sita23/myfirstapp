@@ -13,10 +13,37 @@ class Patient extends Model
     protected $address;
     protected $sgk_id;
 
+    public function initialize()
+    {
+        $this->hasMany(
+            'id',
+            'Sales',
+            'patient_id'
+        );
+
+        $this->belongsTo(
+            'sgk_id',
+            'Sevo\Model\Sgk',
+            'id',
+            [
+                'alias' => '_Sgk',
+            ]
+        );
+    }
+
+    /**
+     * @return Sgk
+     */
+    public function getSgk()
+    {
+        return $this->_Sgk;
+    }
+
+
     /**
      * @return mixed
      */
-    public function getSgkİd()
+    public function getSgkId()
     {
         return $this->sgk_id;
     }
@@ -24,7 +51,7 @@ class Patient extends Model
     /**
      * @param mixed $sgk_id
      */
-    public function setSgkİd($sgk_id): void
+    public function setSgkId($sgk_id): void
     {
         $this->sgk_id = $sgk_id;
     }

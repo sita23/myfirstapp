@@ -3,11 +3,19 @@
 namespace Sevo\Model;
 
 use Phalcon\Mvc\Model;
-
 class Category extends Model
 {
     protected $id;
     protected $name;
+
+    public function initialize()
+    {
+        $this->hasMany(
+            'id',
+            'Product',
+            'category_id'
+        );
+    }
 
     /**
      * @return mixed

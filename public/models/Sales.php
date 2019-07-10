@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types = 1);
 
 namespace Sevo\Model;
 
@@ -12,10 +12,32 @@ class Sales extends Model
     protected $total;
     protected $patient_id;
 
+    /** @var Patient $_Patient */
+
+    public function initialize()
+    {
+        $this->belongsTo(
+            'patient_id',
+            'Sevo\Model\Patient',
+            'id',
+            [
+                'alias' => '_Patient',
+            ]
+        );
+    }
+
+    /**
+     * @return Patient
+     */
+    public function getPatient()
+    {
+        return $this->_Patient;
+    }
+
     /**
      * @return mixed
      */
-    public function getPatientİd()
+    public function getPatientId()
     {
         return $this->patient_id;
     }
@@ -23,7 +45,7 @@ class Sales extends Model
     /**
      * @param mixed $patient_id
      */
-    public function setPatientİd($patient_id): void
+    public function setPatientId($patient_id)
     {
         $this->patient_id = $patient_id;
     }

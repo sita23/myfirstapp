@@ -45,6 +45,63 @@ $di->set(
 // Create and bind the DI to the application
 $app = new Micro($di);
 
+$app->notFound(
+    function () use ($app) {
+        $app->response->setStatusCode(404, 'Not Found');
+        $app->response->sendHeaders();
+
+        $message = 'Nothing to see here. Move along....';
+        $app->response->setContent($message);
+        $app->response->send();
+    }
+);
+
+$app->after(
+    function () use ($app) {
+        /*$returnedValue = $app->getReturnedValue();
+        if (is_object($returnedValue) || is_array($returnedValue)) {
+            echo json_encode($returnedValue);
+        } else {
+            echo $returnedValue;
+        }*/
+    }
+);
+
+$app->get('/test', function () use ($app) {
+    /** @var Product $product */
+    $product = Product::findFirst(1);
+    echo $product->getName();
+    echo $product->getCategoryId();
+
+    echo $product->getCategory()->getName();
+    //var_dump($product);
+});
+
+
+$app->get('/test', function () use ($app) {
+    /** @var Patient $patient */
+    $patient = Patient::findFirst(2);
+    echo $patient->getName();
+    echo $patient->getSgkId();
+
+    echo $patient->getSgkId()->getName();
+
+});
+
+$app->get('/test', function () use ($app) {
+    /** @var Sales $sales */
+    $sales = Sales::findFirst(1);
+
+    echo json_encode($sales);
+    echo $sales->getTc();
+    echo $sales->getPatientId();
+    echo $sales->getSgkId();
+
+    echo $sales->getSgkId()->getName();
+    echo $sales->getPatient()->getTc();
+
+});
+
 $app->get(
     '/',
     function () use ($app) {
@@ -63,10 +120,12 @@ $app->get(
 
 
 $app->get(
-    '/api/users/{id}',
+    '/api/users/{id:[0-9]+}',
     function ($id) {
         $user = User::findFirst($id);
-        echo json_encode($user);
+
+        $data = $user->toArray();
+        echo json_encode($data);
     }
 );
 
@@ -90,7 +149,7 @@ $app->post(
 );
 
 $app->put(
-    '/api/users/{id}',
+    '/api/users/{id:[0-9]+}',
     function ($id) use ($app) {
         $userObject = $app->request->getJsonRawBody();
 
@@ -170,6 +229,15 @@ $app->get(
     }
 );
 
+$app->get(
+    '/api/sgk/{id:[0-9]+}',
+    function ($id) {
+        $sgk = Sgk::findFirst($id);
+        echo json_encode($sgk);
+    }
+
+);
+
 $app->post(
     '/api/sgk',
     function () use ($app) {
@@ -185,7 +253,7 @@ $app->post(
 );
 
 $app->put(
-    '/api/sgk/{id}',
+    '/api/sgk/{id:[0-9]+}',
     function ($id) use ($app) {
         $sgkObject = $app->request->getJsonRawBody();
 
@@ -198,7 +266,7 @@ $app->put(
 );
 
 $app->delete(
-    '/api/sgk/{id}',
+    '/api/sgk/{id:[0-9]+}',
     function ($id) {
         $sgk = Sgk::findfirst($id);
         if (empty($sgk)) {
@@ -233,15 +301,33 @@ $app->get(
 );
 
 $app->get(
-    '/api/sales/{id}',
+    '/api/sales/{text:[a-zA-z0-9]+}',
+    function ($text) {
+        echo $text;
+    }
+);
+
+$app->get(
+    '/api/sales/{id:[0-9]+}',
     function ($id) {
-        $sales = Sales::findfirst($id);
-        echo json_encode($sales);
+        /** @var Sales $sales */
+        $sales = Sales::findFirst($id);
+        $data = $sales->toArray();
+
+        $data['rel_patient'] = [];
+        if ($sales->getPatient() instanceof Patient) {
+            $data['rel_patient'] = $sales->getPatient()->toArray();
+            if ($sales->getPatient()->getSgk() instanceof Sgk) {
+                $data['rel_patient']['rel_sgk'] = $sales->getPatient()->getSgk()->toArray();
+            }
+        }
+        echo json_encode($data);
+
     }
 );
 
 $app->delete(
-    '/api/sales/{id}',
+    '/api/sales/{id:[0-9]+}',
     function ($id) {
         $sales = Sales::findfirst($id);
         if (empty($sales)) {
@@ -255,7 +341,7 @@ $app->delete(
 );
 
 $app->put(
-    '/api/sales/{id}',
+    '/api/sales/{id:[0-9]+}',
     function ($id) use ($app) {
         $salesObject = $app->request->getJsonRawBody();
 
@@ -293,15 +379,26 @@ $app->get(
 );
 
 $app->get(
-    '/api/product/{id}',
+    '/api/product/{id:[0-9]+}',
     function ($id) {
+        /** @var Product $product */
         $product = Product::findFirst($id);
-        echo json_encode($product);
+        $data = $product->toArray();
+        $data['price2'] = $data["price"] . "TL";
+        $data['price3'] = $data["price"] . "try";
+        $data['rel_category'] = [];
+
+        if ($product->getCategory() instanceof Category) {
+            $data['rel_category'] = $product->getCategory()->toArray();
+        }
+
+        //$data = [];
+        echo json_encode($data);
     }
 );
 
 $app->put(
-    '/api/product/{id}',
+    '/api/product/{id:[0-9]+}',
     function ($id) use ($app) {
         $productObject = $app->request->getJsonRawBody();
 
@@ -319,7 +416,7 @@ $app->put(
 );
 
 $app->delete(
-    '/api/product/{$id}',
+    '/api/product/{id:[0-9]+}',
     function ($id) {
         $product = Product::findFirst($id);
         if (empty($product)) {
@@ -356,15 +453,23 @@ $app->get(
 );
 
 $app->get(
-    '/api/patient/{id}',
+    '/api/patient/{id:[0-9]+}',
     function ($id) {
+        /** @var Patient $patient */
         $patient = Patient::findFirst($id);
-        echo json_encode($patient);
+        $data = $patient->toArray();
+
+        $data['rel_sgk'] = [];
+        if ($patient->getSgk() instanceof Sgk) {
+            $data['rel_sgk'] = $patient->getSgk()->toArray();
+        }
+        echo json_encode($data);
     }
 );
 
+
 $app->put(
-    '/api/patient/{id}',
+    '/api/patient/{id:[0-9]+}',
     function ($id) use ($app) {
         $patientObject = $app->request->getJsonRawBody();
 
@@ -381,7 +486,7 @@ $app->put(
 );
 
 $app->delete(
-    '/api/patient/{id}',
+    '/api/patient/{id:[0-9]+}',
     function ($id) {
         $patient = Patient::findFirst($id);
         if (empty($patient)) {
@@ -417,7 +522,7 @@ $app->get(
 );
 
 $app->get(
-    '/api/company/{id}',
+    '/api/company/{id:[0-9]+}',
     function ($id) {
         $company = Company::findFirst($id);
         echo json_encode($company);
@@ -426,7 +531,7 @@ $app->get(
 );
 
 $app->put(
-    '/api/company/{id}',
+    '/api/company/{id:[0-9]+}',
     function ($id) use ($app) {
         $companyObject = $app->request->getJsonRawBody();
 
@@ -442,7 +547,7 @@ $app->put(
 );
 
 $app->delete(
-    '/api/company/{id}',
+    '/api/company/{id:[0-9]+}',
     function ($id) {
         $company = Company::findFirst($id);
         if (empty($company)) {
@@ -476,7 +581,7 @@ $app->get(
 );
 
 $app->get(
-    '/api/category/{id}',
+    '/api/category/{id:[0-9]+}',
     function ($id) {
         $category = Category::findFirst($id);
         echo json_encode($category);
@@ -484,7 +589,7 @@ $app->get(
 );
 
 $app->put(
-    '/api/category/{id}',
+    '/api/category/{id:[0-9]+}',
     function ($id) use ($app) {
         $categoryObject = $app->request->getJsonRawBody();
 
@@ -498,7 +603,7 @@ $app->put(
 );
 
 $app->delete(
-    '/api/category/{id}',
+    '/api/category/{id:[0-9]+}',
     function ($id) {
         $category = Category::findFirst($id);
         if (empty($category)) {

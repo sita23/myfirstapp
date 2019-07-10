@@ -16,10 +16,32 @@ class Product extends Model
     protected $price;
     protected $category_id;
 
+    /** @var Category $_Category */
+
+    public function initialize()
+    {
+        $this->belongsTo(
+            'category_id',
+            'Sevo\Model\Category',
+            'id',
+            [
+                'alias' => '_Category',
+            ]
+        );
+    }
+
+    /**
+     * @return Category
+     */
+    public function getCategory()
+    {
+        return $this->_Category;
+    }
+
     /**
      * @return mixed
      */
-    public function getCategoryİd()
+    public function getCategoryId()
     {
         return $this->category_id;
     }
@@ -27,7 +49,7 @@ class Product extends Model
     /**
      * @param mixed $category_id
      */
-    public function setCategoryİd($category_id): void
+    public function setCategoryId($category_id): void
     {
         $this->category_id = $category_id;
     }
