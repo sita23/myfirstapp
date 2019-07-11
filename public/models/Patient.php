@@ -4,6 +4,7 @@
 namespace Sevo\Model;
 
 use Phalcon\Mvc\Model;
+
 class Patient extends Model
 {
     protected $id;
@@ -73,8 +74,6 @@ class Patient extends Model
     }
 
 
-
-
     /**
      * @return mixed
      */
@@ -90,8 +89,6 @@ class Patient extends Model
     {
         $this->tc = $tc;
     }
-
-
 
 
     /**
@@ -111,7 +108,6 @@ class Patient extends Model
     }
 
 
-
     /**
      * @return mixed
      */
@@ -127,8 +123,6 @@ class Patient extends Model
     {
         $this->name = $name;
     }
-
-
 
 
     /**

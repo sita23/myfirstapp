@@ -13,13 +13,13 @@ use Sevo\Model\Product;
 use Sevo\Model\Patient;
 use Sevo\Model\Company;
 
-
 // Use Loader() to autoload our model
 $loader = new Loader();
 
 $loader->registerNamespaces(
     [
         'Sevo\Model' => __DIR__ . '/models/',
+        'Sevo\Validation' => __DIR__ . '/validations/',
     ]
 );
 
@@ -67,6 +67,50 @@ $app->after(
     }
 );
 
+$app->error(
+    function ($exception) {
+        echo json_encode(
+            [
+                'code' => $exception->getCode(),
+                'status' => 'error',
+                'message' => $exception->getMessage(),
+            ]
+        );
+    }
+);
+$app->post(
+    '/api/models/validation',
+    function () use ($app) {
+        $testValidation = new User();
+
+        if ($testValidation->save() === false) {
+            $validationMsg = [];
+            $messages = $testValidation->getMessages();
+
+            foreach ($messages as $message) {
+                $validationMsg[] = [
+                    'message' => $message->getMessage(),
+                    'field' => $message->getField(),
+                    'type' => $message->getType(),
+                ];
+
+            }
+            echo json_encode($validationMsg);
+        }
+    }
+);
+
+$app->post(
+    '/api/validation/test',
+    function () use ($app) {
+        $testValidation = new Sevo\Validation\TestValidation();
+
+        $messagges = $testValidation->validation($_POST);
+        echo "sevval";
+    }
+);
+
+
 $app->get('/test', function () use ($app) {
     /** @var Product $product */
     $product = Product::findFirst(1);
@@ -105,7 +149,16 @@ $app->get('/test', function () use ($app) {
 $app->get(
     '/',
     function () use ($app) {
-        echo "Anasayfa";
+        $gezegenler = array('Mars', 'Neptün', 'Jüpiter', 'Satürn', 'Dünya');
+
+        $diziSayisi = count($gezegenler);
+
+            echo "- " . $gezegenler[0] . "<br>";
+            echo "- " . $gezegenler[1] . "<br>";
+            echo "- " . $gezegenler[2] . "<br>";
+            echo "- " . $gezegenler[3] . "<br>";
+            echo "- " . $gezegenler[4] . "<br>";
+            echo "Dizi içerisinde bulunan eleman sayısı " . $diziSayisi;
     }
 );
 

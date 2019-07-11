@@ -1,7 +1,11 @@
 <?php
+
 namespace Sevo\Model;
 
 use Phalcon\Mvc\Model;
+use Phalcon\Validation;
+use Phalcon\Validation\Validator\Uniqueness;
+use Phalcon\Validation\Validator\InclusionIn;
 
 class User extends Model
 {
@@ -16,6 +20,34 @@ class User extends Model
     protected $created_at;
 
     protected $last_modified_at;
+
+    public function validation()
+    {
+        $validator = new Validation();
+
+        $validator->add(
+            'type',
+            new InclusionIn(
+                [
+                    'domain' => [
+                        'Mechanical',
+                        'Virtual',
+                    ]
+                ]
+            )
+        );
+
+        $validator->add(
+            'name',
+            new Uniqueness(
+                [
+                    'message' => 'The robot name must be unique',
+                ]
+            )
+        );
+
+        return $this->validate($validator);
+    }
 
     public function getSource()
     {
