@@ -12,6 +12,7 @@ use Sevo\Model\User;
 use Sevo\Model\Product;
 use Sevo\Model\Patient;
 use Sevo\Model\Company;
+use Sevo\Response\Response as HttpResponse;
 
 // Use Loader() to autoload our model
 $loader = new Loader();
@@ -20,6 +21,7 @@ $loader->registerNamespaces(
     [
         'Sevo\Model' => __DIR__ . '/models/',
         'Sevo\Validation' => __DIR__ . '/validations/',
+        'Sevo\Response' => __DIR__ . '/responses',
     ]
 );
 
@@ -58,12 +60,24 @@ $app->notFound(
 
 $app->after(
     function () use ($app) {
-        /*$returnedValue = $app->getReturnedValue();
+        $returnedValue = $app->getReturnedValue();
         if (is_object($returnedValue) || is_array($returnedValue)) {
-            echo json_encode($returnedValue);
+            if ($returnedValue instanceof \Sevo\Response\Response) {
+                /** @var \Sevo\Response\Response $responseObject */
+                $responseObject = $returnedValue;
+                $app->response->setStatusCode($returnedValue->getStatusCode(), $returnedValue->getStatusText());
+                $app->response->sendHeaders($returnedValue->getHeaders());
+
+                if (is_array($returnedValue->getContent()) || is_object($returnedValue->getContent())) {
+                    $app->response->setContent(json_encode($returnedValue->getContent()));
+                }
+                $app->response->send();
+            } else {
+                echo json_encode($returnedValue);
+            }
         } else {
             echo $returnedValue;
-        }*/
+        }
     }
 );
 
@@ -105,8 +119,9 @@ $app->post(
     function () use ($app) {
         $testValidation = new Sevo\Validation\TestValidation();
 
-        $messagges = $testValidation->validation($_POST);
-        echo "sevval";
+        $messagges = $testValidation->validate($_POST);
+        echo json_encode($messagges);
+
     }
 );
 
@@ -153,12 +168,12 @@ $app->get(
 
         $diziSayisi = count($gezegenler);
 
-            echo "- " . $gezegenler[0] . "<br>";
-            echo "- " . $gezegenler[1] . "<br>";
-            echo "- " . $gezegenler[2] . "<br>";
-            echo "- " . $gezegenler[3] . "<br>";
-            echo "- " . $gezegenler[4] . "<br>";
-            echo "Dizi içerisinde bulunan eleman sayısı " . $diziSayisi;
+        echo "- " . $gezegenler[0] . "<br>";
+        echo "- " . $gezegenler[1] . "<br>";
+        echo "- " . $gezegenler[2] . "<br>";
+        echo "- " . $gezegenler[3] . "<br>";
+        echo "- " . $gezegenler[4] . "<br>";
+        echo "Dizi içerisinde bulunan eleman sayısı " . $diziSayisi;
     }
 );
 
@@ -176,6 +191,9 @@ $app->get(
     '/api/users/{id:[0-9]+}',
     function ($id) {
         $user = User::findFirst($id);
+        if (!$user) {
+            return new HttpResponse('', HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
+        }
 
         $data = $user->toArray();
         echo json_encode($data);
@@ -192,12 +210,13 @@ $app->post(
         $user->setUserName($userObject->user_name);
         $user->setEmail($userObject->email);
         $user->setPassword($userObject->password);
-        $user->setCreatedAt(date('Y-m-d H:i:s'));
 
-        $user->save();
+        if ($user->save() === false) {
+            $messages = $user->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
 
-        //echo "Merhaba, ".$user->getUserName();
-        //echo sprintf("Merhaba, %s", $user->getPassword());
+        return new HttpResponse($user, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 
@@ -211,14 +230,13 @@ $app->put(
         $user->setUserName($userObject->user_name);
         $user->setEmail($userObject->email);
         $user->setPassword($userObject->password);
-        $user->setLastModifiedAt(date('Y-m-d H:i:s'));
 
         $user->update();
     }
 );
 
 $app->delete(
-    '/api/users/{id}',
+    '/api/users/{id:[0-9]+}',
     function ($id) {
         $user = User::findFirst($id);
 
@@ -231,48 +249,18 @@ $app->delete(
         }
     }
 );
-
-
-// Searches for robots with $name in their name
 $app->get(
-    '/api/robots/search/{name}',
-    function ($name) {
-        // Operation to fetch robot with name $name
+    '/api/test',
+    function () use ($app) {
+        echo "se";
+        $app->response->setStatusCode(201, 'created');
+        $app->response->sendHeaders();
+
+        $message = 'great';
+        $app->response->setContent($message);
+        $app->response->send();
     }
 );
-
-// Retrieves robots based on primary key
-$app->get(
-    '/api/robots/{id:[0-9]+}',
-    function ($id) {
-        // Operation to fetch robot with id $id
-    }
-);
-
-// Adds a new robot
-$app->post(
-    '/api/robots',
-    function () {
-        // Operation to create a fresh robot
-    }
-);
-
-// Updates robots based on primary key
-$app->put(
-    '/api/robots/{id:[0-9]+}',
-    function ($id) {
-        // Operation to update a robot with id $id
-    }
-);
-
-// Deletes robots based on primary key
-$app->delete(
-    '/api/robots/{id:[0-9]+}',
-    function ($id) {
-        // Operation to delete the robot with id $id
-    }
-);
-
 
 $app->get(
     '/api/sgk',
@@ -338,10 +326,8 @@ $app->post(
         $salesObject = $app->request->getJsonRawBody();
         $sales = new Sales();
 
-        $sales->setCreatedAt(date('Y-m-d H:i:s'));
         $sales->setTotal($salesObject->total);
 
-        $sales->save();
     }
 );
 //tüm sales kayıtlarını listeler.
@@ -406,6 +392,7 @@ $app->put(
     }
 );
 
+
 $app->post(
     '/api/product',
     function () use ($app) {
@@ -417,9 +404,20 @@ $app->post(
         $product->setConsumptionDate($productObject->consumption_date);
         $product->setProductionDate($productObject->production_date);
         $product->setPrice($productObject->price);
-        $product->setCreatedAt(date('Y-m-d H:i:s'));
 
-        $product->save();
+        if ($product->save() === false) {
+            $messages = $product->getMessages();
+
+            $validationMsg = [];
+            foreach ($messages as $message) {
+                $validationMsg = [
+                    'message' => $message->getMessage(),
+                    'field' => $message->getField(),
+                    'type' => $message->getType(),
+                ];
+            }
+            echo json_encode($validationMsg);
+        }
     }
 );
 
@@ -461,7 +459,6 @@ $app->put(
         $product->setStock($productObject->stock);
         $product->setConsumptionDate($productObject->consumption_date);
         $product->setProductionDate($productObject->production_date);
-        $product->setLastModifiedAt(date('Y-m-d H:i:s'));
         $product->setPrice($productObject->price);
 
         $product->update();
@@ -493,7 +490,20 @@ $app->post(
         $patient->setName($patientObject->name);
         $patient->setAddress($patientObject->address);
 
-        $patient->save();
+        if ($patient->save() === false) {
+            $messages = $patient->getMessages();
+
+            $validationMsg = [];
+            foreach ($messages as $message) {
+                $validationMsg = [
+                    'message' => $message->getMessage(),
+                    'field' => $message->getField(),
+                    'type' => $message->getType(),
+                ];
+            }
+
+            echo json_encode($validationMsg);
+        }
     }
 );
 
@@ -560,9 +570,20 @@ $app->post(
 
         $company->setName($companyObject->name);
         $company->setPhoneNumber($companyObject->phone_number);
-        $company->setCreatedAt(date('Y-m-d H:i:s'));
 
-        $company->save();
+        if ($company->save() === false) {
+            $messages = $company->getMessages();
+
+            $validationMsg = [];
+            foreach ($messages as $message) {
+                $validationMsg = [
+                    'message' => $message->getMessage(),
+                    'field' => $message->getField(),
+                    'type' => $message->getType(),
+                ];
+            }
+            echo json_encode($validationMsg);
+        }
     }
 );
 

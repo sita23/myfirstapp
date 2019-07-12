@@ -4,16 +4,32 @@
 namespace Sevo\Model;
 
 use Phalcon\Mvc\Model;
+use Phalcon\Validation;
+use Phalcon\Validation\Validator\Uniqueness;
+use Phalcon\Validation\Validator\InclusionIn;
 
 class Patient extends Model
 {
     protected $id;
     protected $tc;
-    protected $phone_name;
     protected $surname;
     protected $address;
     protected $sgk_id;
 
+    public function validation()
+    {
+        $validator = new Validation();
+
+        $validator->add(
+            'tc',
+            new Uniqueness(
+                [
+                    'message' => 'tc kimlik benzersiz olmalı.',
+                ]
+            )
+        );
+        return $this->validate($validator);
+    }
     public function initialize()
     {
         $this->hasMany(

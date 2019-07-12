@@ -3,6 +3,9 @@
 namespace Sevo\Model;
 
 use Phalcon\Mvc\Model;
+use Phalcon\Validation;
+use Phalcon\Validation\Validator\Uniqueness;
+use Phalcon\Validation\Validator\InclusionIn;
 
 class Company extends Model
 {
@@ -11,6 +14,31 @@ class Company extends Model
     protected $phone_number;
     protected $created_at;
     protected $last_modified_at;
+
+    public function validation()
+    {
+        $validator = new Validation();
+
+        $validator->add(
+            'name',
+            new Uniqueness(
+                [
+                    'message' => 'şirket adı benzersiz olmalı.',
+                ]
+            )
+        );
+    }
+
+    public function beforeValidationOnCreate()
+    {
+        $this->created_at = date('Y-m-d H:i:s');
+    }
+
+    public function beforeValidationOnUpdate()
+    {
+        $this->last_modified_at = date('Y-m-d H:i:s');
+    }
+
 
     /**
      * @return mixed

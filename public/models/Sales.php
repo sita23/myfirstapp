@@ -12,6 +12,18 @@ class Sales extends Model
     protected $total;
     protected $patient_id;
 
+    public function beforeCreate()
+    {
+        // Set the creation date
+        $this->created_at = date('Y-m-d H:i:s');
+    }
+
+    public function beforeUpdate()
+    {
+        // Set the modification date
+        $this->last_modified_at = date('Y-m-d H:i:s');
+    }
+
     /** @var Patient $_Patient */
 
     public function initialize()

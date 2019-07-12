@@ -6,6 +6,7 @@ use Phalcon\Mvc\Model;
 use Phalcon\Validation;
 use Phalcon\Validation\Validator\Uniqueness;
 use Phalcon\Validation\Validator\InclusionIn;
+use Phalcon\Validation\Validator\Email;
 
 class User extends Model
 {
@@ -26,27 +27,46 @@ class User extends Model
         $validator = new Validation();
 
         $validator->add(
-            'type',
-            new InclusionIn(
+            'user_name',
+            new Uniqueness(
                 [
-                    'domain' => [
-                        'Mechanical',
-                        'Virtual',
-                    ]
+                    'message' => 'Kullanıcı adı benzersiz olmalı.',
                 ]
             )
         );
 
         $validator->add(
-            'name',
-            new Uniqueness(
+            'email',
+            new Email(
                 [
-                    'message' => 'The robot name must be unique',
+                    'message' => 'E-posta adresi geçersiz!',
                 ]
             )
         );
 
         return $this->validate($validator);
+    }
+
+    public function beforeValidationOnCreate()
+    {
+        $this->created_at = date('Y-m-d H:i:s');
+    }
+
+    public function beforeValidationOnUpdate()
+    {
+        $this->last_modified_at = date('Y-m-d H:i:s');
+    }
+
+    public function beforeCreate()
+    {
+        // Set the creation date
+        //$this->created_at = date('Y-m-d H:i:s');
+    }
+
+    public function beforeUpdate()
+    {
+        // Set the modification date
+        //$this->last_modified_at = date('Y-m-d H:i:s');
     }
 
     public function getSource()
@@ -149,6 +169,4 @@ class User extends Model
     {
         $this->last_modified_at = $last_modified_at;
     }
-
-
 }

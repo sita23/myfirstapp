@@ -4,6 +4,9 @@
 namespace Sevo\Model;
 
 use Phalcon\Mvc\Model;
+use Phalcon\Validation;
+use Phalcon\Validation\Validator\Uniqueness;
+
 class Product extends Model
 {
     protected $id;
@@ -15,6 +18,45 @@ class Product extends Model
     protected $last_modified_at;
     protected $price;
     protected $category_id;
+
+    public function validation()
+    {
+        $validator = new Validation();
+
+        $validator->add(
+            'name',
+            new Uniqueness(
+                [
+                    'message' => 'ürün adı benzersiz olmalı.',
+                ]
+            )
+        );
+        return $this->validate($validator);
+    }
+
+    public function beforeValidationOnCreate()
+    {
+        $this->created_at = date('Y-m-d H:i:s');
+    }
+
+    public function beforeValidationOnUpdate()
+    {
+        $this->last_modified_at = date('Y-m-d H:i:s');
+    }
+
+    public function beforeCreate()
+    {
+        // Set the creation date
+        //$this->created_at = date('Y-m-d H:i:s');
+    }
+
+    public function beforeUpdate()
+    {
+        // Set the modification date
+        //$this->last_modified_at = date('Y-m-d H:i:s');
+    }
+
+
 
     /** @var Category $_Category */
 
