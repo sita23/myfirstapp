@@ -70,6 +70,8 @@ $app->after(
 
                 if (is_array($returnedValue->getContent()) || is_object($returnedValue->getContent())) {
                     $app->response->setContent(json_encode($returnedValue->getContent()));
+                } else {
+                    $app->response->setContent($returnedValue->getContent());
                 }
                 $app->response->send();
             } else {
@@ -181,12 +183,26 @@ $app->get(
 $app->get(
     '/api/users',
     function () use ($app) {
-        $users = User::find();
-        echo json_encode($users);
+        $totalCount = 30;
+        $maxItemPerPage = 5;
+
+        $page = $_GET['page'];
+        if ($page < 1) {
+            $page = 1;
+        }
+
+        $offset = ($page - 1) * $maxItemPerPage;
+
+        $users = User::find([
+            'offset' => $offset,
+            'limit' => $maxItemPerPage,
+            'order' => 'id ASC',
+        ]);
+        return new HttpResponse($users, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
-
+//user details
 $app->get(
     '/api/users/{id:[0-9]+}',
     function ($id) {
@@ -194,12 +210,11 @@ $app->get(
         if (!$user) {
             return new HttpResponse('', HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
-
-        $data = $user->toArray();
-        echo json_encode($data);
+        return new HttpResponse($user, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
+//create user
 $app->post(
     '/api/users',
     function () use ($app) {
@@ -215,11 +230,11 @@ $app->post(
             $messages = $user->getMessages();
             return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
         }
-
         return new HttpResponse($user, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 
+//update user
 $app->put(
     '/api/users/{id:[0-9]+}',
     function ($id) use ($app) {
@@ -231,7 +246,7 @@ $app->put(
         $user->setEmail($userObject->email);
         $user->setPassword($userObject->password);
 
-        $user->update();
+        return new HttpResponse($user, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
@@ -241,14 +256,14 @@ $app->delete(
         $user = User::findFirst($id);
 
         if (empty($user)) {
-            echo json_encode(["message" => "böyle bir kullanıcı yok"]);
+            return new HttpResponse($user, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
-
         if ($user->delete()) {
-            echo json_encode(["message" => "silindi"]);
+            return new HttpResponse('', HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
         }
     }
 );
+
 $app->get(
     '/api/test',
     function () use ($app) {
@@ -261,12 +276,12 @@ $app->get(
         $app->response->send();
     }
 );
-
+//tüm sgk yı listeler
 $app->get(
     '/api/sgk',
     function () use ($app) {
         $sgk = Sgk::find();
-        echo json_encode($sgk);
+        return new HttpResponse($sgk, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
@@ -274,7 +289,10 @@ $app->get(
     '/api/sgk/{id:[0-9]+}',
     function ($id) {
         $sgk = Sgk::findFirst($id);
-        echo json_encode($sgk);
+        if (!$sgk) {
+            return new HttpResponse('', HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
+        }
+        return new HttpResponse($sgk, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 
 );
@@ -288,7 +306,11 @@ $app->post(
         $sgk = new Sgk();
         $sgk->setName($sgkObject->name);
 
-        $sgk->save();
+        if ($sgk->save() === false) {
+            $messages = $sgk->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($sgk, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 
 );
@@ -302,7 +324,11 @@ $app->put(
         $sgk = Sgk::findFirst($id);
         $sgk->setName($sgkObject->name);
 
-        $sgk->update();
+        if ($sgk->update() === false) {
+            $messages = $sgk->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($sgk, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 
@@ -311,11 +337,11 @@ $app->delete(
     function ($id) {
         $sgk = Sgk::findfirst($id);
         if (empty($sgk)) {
-            echo json_encode(["message" => "böyle bir kullanıcı yok"]);
+            return new HttpResponse($sgk, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
 
         if ($sgk->delete()) {
-            echo json_encode(["message" => "silindi"]);
+            return new HttpResponse('', HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
         }
     }
 );
@@ -327,6 +353,11 @@ $app->post(
         $sales = new Sales();
 
         $sales->setTotal($salesObject->total);
+        if ($sales->save() === false) {
+            $messages = $sales->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($sales, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
 
     }
 );
@@ -335,7 +366,7 @@ $app->get(
     '/api/sales',
     function () use ($app) {
         $sales = Sales::find();
-        echo json_encode($sales);
+        return new HttpResponse($sales, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
@@ -351,6 +382,9 @@ $app->get(
     function ($id) {
         /** @var Sales $sales */
         $sales = Sales::findFirst($id);
+        if (!$sales) {
+            return new HttpResponse('', HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
+        }
         $data = $sales->toArray();
 
         $data['rel_patient'] = [];
@@ -360,7 +394,7 @@ $app->get(
                 $data['rel_patient']['rel_sgk'] = $sales->getPatient()->getSgk()->toArray();
             }
         }
-        echo json_encode($data);
+        return new HttpResponse($data, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
 
     }
 );
@@ -370,11 +404,10 @@ $app->delete(
     function ($id) {
         $sales = Sales::findfirst($id);
         if (empty($sales)) {
-            echo json_encode(["message" => "böyle bir kullanıcı yok"]);
+            return new HttpResponse($sales, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
-
         if ($sales->delete()) {
-            echo json_encode(["message" => "silindi"]);
+            return new HttpResponse('', HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
         }
     }
 );
@@ -388,7 +421,11 @@ $app->put(
         $sales = Sales::findFirst($id);
         $sales->setTotal($salesObject->total);
 
-        $sales->update();
+        if ($sales->update() === false) {
+            $messages = $sales->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($sales, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 
@@ -407,25 +444,18 @@ $app->post(
 
         if ($product->save() === false) {
             $messages = $product->getMessages();
-
-            $validationMsg = [];
-            foreach ($messages as $message) {
-                $validationMsg = [
-                    'message' => $message->getMessage(),
-                    'field' => $message->getField(),
-                    'type' => $message->getType(),
-                ];
-            }
-            echo json_encode($validationMsg);
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
         }
+        return new HttpResponse($product, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
+
 );
 
 $app->get(
     '/api/product',
     function () use ($app) {
         $product = Product::find();
-        echo json_encode($product);
+        return new HttpResponse($product, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
@@ -434,6 +464,9 @@ $app->get(
     function ($id) {
         /** @var Product $product */
         $product = Product::findFirst($id);
+        if (!$product) {
+            return new HttpResponse($product, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
+        }
         $data = $product->toArray();
         $data['price2'] = $data["price"] . "TL";
         $data['price3'] = $data["price"] . "try";
@@ -442,9 +475,7 @@ $app->get(
         if ($product->getCategory() instanceof Category) {
             $data['rel_category'] = $product->getCategory()->toArray();
         }
-
-        //$data = [];
-        echo json_encode($data);
+        return new HttpResponse($data, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
@@ -461,7 +492,11 @@ $app->put(
         $product->setProductionDate($productObject->production_date);
         $product->setPrice($productObject->price);
 
-        $product->update();
+        if ($product->update() === false) {
+            $messages = $product->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($product, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 
@@ -470,11 +505,10 @@ $app->delete(
     function ($id) {
         $product = Product::findFirst($id);
         if (empty($product)) {
-            echo json_encode(["message" => "böyle bir kullanıcı yok"]);
+            return new HttpResponse($product, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
-
         if ($product->delete()) {
-            echo json_encode(["message" => "silindi"]);
+            return new HttpResponse('', HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
         }
     }
 );
@@ -492,18 +526,9 @@ $app->post(
 
         if ($patient->save() === false) {
             $messages = $patient->getMessages();
-
-            $validationMsg = [];
-            foreach ($messages as $message) {
-                $validationMsg = [
-                    'message' => $message->getMessage(),
-                    'field' => $message->getField(),
-                    'type' => $message->getType(),
-                ];
-            }
-
-            echo json_encode($validationMsg);
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
         }
+        return new HttpResponse($patient, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 
@@ -511,7 +536,8 @@ $app->get(
     '/api/patient',
     function () use ($app) {
         $patient = Patient::find();
-        echo json_encode($patient);
+
+        return new HttpResponse($patient, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
@@ -520,16 +546,18 @@ $app->get(
     function ($id) {
         /** @var Patient $patient */
         $patient = Patient::findFirst($id);
+        if (!$patient) {
+            return new HttpResponse($patient, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
+        }
         $data = $patient->toArray();
 
         $data['rel_sgk'] = [];
         if ($patient->getSgk() instanceof Sgk) {
             $data['rel_sgk'] = $patient->getSgk()->toArray();
         }
-        echo json_encode($data);
+        return new HttpResponse($data, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
-
 
 $app->put(
     '/api/patient/{id:[0-9]+}',
@@ -544,7 +572,11 @@ $app->put(
         $patient->setName($patientObject->name);
         $patient->setAddress($patientObject->address);
 
-        $patient->update();
+        if ($patient->update() === false) {
+            $messages = $patient->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($patient, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 
@@ -553,11 +585,10 @@ $app->delete(
     function ($id) {
         $patient = Patient::findFirst($id);
         if (empty($patient)) {
-            echo json_encode(["message" => "böyle bir kullanıcı yok"]);
+            return new HttpResponse($patient, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
-
         if ($patient->delete()) {
-            echo json_encode(["message" => "silindi"]);
+            return new HttpResponse('', HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
         }
     }
 );
@@ -573,17 +604,9 @@ $app->post(
 
         if ($company->save() === false) {
             $messages = $company->getMessages();
-
-            $validationMsg = [];
-            foreach ($messages as $message) {
-                $validationMsg = [
-                    'message' => $message->getMessage(),
-                    'field' => $message->getField(),
-                    'type' => $message->getType(),
-                ];
-            }
-            echo json_encode($validationMsg);
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
         }
+        return new HttpResponse($company, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 
@@ -591,7 +614,7 @@ $app->get(
     '/api/company',
     function () use ($app) {
         $company = Company::find();
-        echo json_encode($company);
+        return new HttpResponse($company, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
@@ -599,7 +622,10 @@ $app->get(
     '/api/company/{id:[0-9]+}',
     function ($id) {
         $company = Company::findFirst($id);
-        echo json_encode($company);
+        if (!$company) {
+            return new HttpResponse('', HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
+        }
+        return new HttpResponse($company, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 
 );
@@ -616,7 +642,11 @@ $app->put(
         $company->setPhoneNumber($companyObject->phone_number);
         $company->setCreatedAt(date('Y-m-d H:i:s'));
 
-        $company->update();
+        if ($company->update() === false) {
+            $messages = $company->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($company, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 
@@ -625,11 +655,11 @@ $app->delete(
     function ($id) {
         $company = Company::findFirst($id);
         if (empty($company)) {
-            echo json_encode(["message" => "böyle bir kullanıcı yok"]);
+            return new HttpResponse($company, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
 
         if ($company->delete()) {
-            echo json_encode(["message" => "silindi"]);
+            return new HttpResponse('', HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
         }
     }
 );
@@ -642,7 +672,11 @@ $app->post(
 
         $category->setName($categoryObject->name);
 
-        $category->save();
+        if ($category->save() === false) {
+            $messages = $category->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($category, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 
@@ -650,7 +684,7 @@ $app->get(
     '/api/category',
     function () use ($app) {
         $category = Category::find();
-        echo json_encode($category);
+        return new HttpResponse($category, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
@@ -658,7 +692,10 @@ $app->get(
     '/api/category/{id:[0-9]+}',
     function ($id) {
         $category = Category::findFirst($id);
-        echo json_encode($category);
+        if (!$category) {
+            return new HttpResponse('', HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
+        }
+        return new HttpResponse($category, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
@@ -672,7 +709,11 @@ $app->put(
 
         $category->setName($categoryObject->name);
 
-        $category->update();
+        if ($category->update() === false) {
+            $messages = $category->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($category, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 
@@ -681,12 +722,13 @@ $app->delete(
     function ($id) {
         $category = Category::findFirst($id);
         if (empty($category)) {
-            echo json_encode(["message" => "böyle bir kullanıcı yok"]);
+            return new HttpResponse($category, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
 
         if ($category->delete()) {
-            echo json_encode(["message" => "silindi"]);
+            return new HttpResponse('', HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
         }
     }
 );
+
 $app->handle();
