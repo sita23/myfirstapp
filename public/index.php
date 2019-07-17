@@ -16,7 +16,6 @@ use Sevo\Model\CompanyProduct;
 use Sevo\Helper\Response as HttpResponse;
 use Sevo\Helper\Paginator;
 
-
 $loader = new Loader();
 
 $loader->registerNamespaces(
@@ -730,6 +729,10 @@ $app->get(
         $data['rel_company'] = [];
         if ($company_product->getCompany() instanceof Company) {
             $data['rel_company'] = $company_product->getCompany()->toArray();
+        }
+        $data['rel_product'] = [];
+        if ($company_product->getProduct() instanceof Product) {
+            $data['rel_product'] = $company_product->getProduct()->toArray();
         }
         return new HttpResponse($data, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
