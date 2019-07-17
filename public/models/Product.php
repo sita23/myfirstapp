@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Sevo\Model;
 
 use Phalcon\Mvc\Model;
@@ -55,8 +54,6 @@ class Product extends Model
         // Set the modification date
         //$this->last_modified_at = date('Y-m-d H:i:s');
     }
-
-
 
     /** @var Category $_Category */
 

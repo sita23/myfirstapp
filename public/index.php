@@ -12,16 +12,16 @@ use Sevo\Model\User;
 use Sevo\Model\Product;
 use Sevo\Model\Patient;
 use Sevo\Model\Company;
-use Sevo\Response\Response as HttpResponse;
+use Sevo\Helper\Response as HttpResponse;
+use Sevo\Helper\Paginator;
 
-// Use Loader() to autoload our model
 $loader = new Loader();
 
 $loader->registerNamespaces(
     [
         'Sevo\Model' => __DIR__ . '/models/',
         'Sevo\Validation' => __DIR__ . '/validations/',
-        'Sevo\Response' => __DIR__ . '/responses',
+        'Sevo\Helper' => __DIR__ . '/helpers',
     ]
 );
 
@@ -29,7 +29,6 @@ $loader->register();
 
 $di = new FactoryDefault();
 
-// Set up the database service
 $di->set(
     'db',
     function () {
@@ -44,7 +43,6 @@ $di->set(
     }
 );
 
-// Create and bind the DI to the application
 $app = new Micro($di);
 
 $app->notFound(
@@ -62,8 +60,8 @@ $app->after(
     function () use ($app) {
         $returnedValue = $app->getReturnedValue();
         if (is_object($returnedValue) || is_array($returnedValue)) {
-            if ($returnedValue instanceof \Sevo\Response\Response) {
-                /** @var \Sevo\Response\Response $responseObject */
+            if ($returnedValue instanceof \Sevo\Helper\Response) {
+                /** @var \Sevo\Helper\Response $responseObject */
                 $responseObject = $returnedValue;
                 $app->response->setStatusCode($returnedValue->getStatusCode(), $returnedValue->getStatusText());
                 $app->response->sendHeaders($returnedValue->getHeaders());
@@ -116,53 +114,6 @@ $app->post(
     }
 );
 
-$app->post(
-    '/api/validation/test',
-    function () use ($app) {
-        $testValidation = new Sevo\Validation\TestValidation();
-
-        $messagges = $testValidation->validate($_POST);
-        echo json_encode($messagges);
-
-    }
-);
-
-
-$app->get('/test', function () use ($app) {
-    /** @var Product $product */
-    $product = Product::findFirst(1);
-    echo $product->getName();
-    echo $product->getCategoryId();
-
-    echo $product->getCategory()->getName();
-    //var_dump($product);
-});
-
-
-$app->get('/test', function () use ($app) {
-    /** @var Patient $patient */
-    $patient = Patient::findFirst(2);
-    echo $patient->getName();
-    echo $patient->getSgkId();
-
-    echo $patient->getSgkId()->getName();
-
-});
-
-$app->get('/test', function () use ($app) {
-    /** @var Sales $sales */
-    $sales = Sales::findFirst(1);
-
-    echo json_encode($sales);
-    echo $sales->getTc();
-    echo $sales->getPatientId();
-    echo $sales->getSgkId();
-
-    echo $sales->getSgkId()->getName();
-    echo $sales->getPatient()->getTc();
-
-});
-
 $app->get(
     '/',
     function () use ($app) {
@@ -179,32 +130,22 @@ $app->get(
     }
 );
 
-// bu tüm kullanıcıları listeler.
 $app->get(
-    '/api/users',
+    '/api/user',
     function () use ($app) {
-        $totalCount = 30;
-        $maxItemPerPage = 5;
+        $paginator = new Paginator($app->request->get('page', 'int', 1), 5, 30);
 
-        $page = $_GET['page'];
-        if ($page < 1) {
-            $page = 1;
-        }
-
-        $offset = ($page - 1) * $maxItemPerPage;
-
-        $users = User::find([
-            'offset' => $offset,
-            'limit' => $maxItemPerPage,
+        $user = User::find([
+            'offset' => $paginator->getOffset(),
+            'limit' => $paginator->getLimit(),
             'order' => 'id ASC',
         ]);
-        return new HttpResponse($users, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
+        return new HttpResponse($user, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
-//user details
 $app->get(
-    '/api/users/{id:[0-9]+}',
+    '/api/user/{id:[0-9]+}',
     function ($id) {
         $user = User::findFirst($id);
         if (!$user) {
@@ -214,9 +155,8 @@ $app->get(
     }
 );
 
-//create user
 $app->post(
-    '/api/users',
+    '/api/user',
     function () use ($app) {
         // Getting a request instance
         $userObject = $app->request->getJsonRawBody();
@@ -234,9 +174,8 @@ $app->post(
     }
 );
 
-//update user
 $app->put(
-    '/api/users/{id:[0-9]+}',
+    '/api/user/{id:[0-9]+}',
     function ($id) use ($app) {
         $userObject = $app->request->getJsonRawBody();
 
@@ -251,7 +190,7 @@ $app->put(
 );
 
 $app->delete(
-    '/api/users/{id:[0-9]+}',
+    '/api/user/{id:[0-9]+}',
     function ($id) {
         $user = User::findFirst($id);
 
@@ -267,7 +206,6 @@ $app->delete(
 $app->get(
     '/api/test',
     function () use ($app) {
-        echo "se";
         $app->response->setStatusCode(201, 'created');
         $app->response->sendHeaders();
 
@@ -276,11 +214,17 @@ $app->get(
         $app->response->send();
     }
 );
-//tüm sgk yı listeler
+
 $app->get(
     '/api/sgk',
     function () use ($app) {
-        $sgk = Sgk::find();
+        $paginator = new Paginator($app->request->get('page', 'int', 1), 5, 30);
+
+        $sgk = Sgk::find([
+            'offset' => $paginator->getOffset(),
+            'limit' => $paginator->getLimit(),
+            'order' => 'id ASC',
+        ]);
         return new HttpResponse($sgk, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
@@ -294,7 +238,6 @@ $app->get(
         }
         return new HttpResponse($sgk, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
-
 );
 
 $app->post(
@@ -312,7 +255,6 @@ $app->post(
         }
         return new HttpResponse($sgk, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
-
 );
 
 $app->put(
@@ -358,14 +300,19 @@ $app->post(
             return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
         }
         return new HttpResponse($sales, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
-
     }
 );
-//tüm sales kayıtlarını listeler.
+
 $app->get(
     '/api/sales',
     function () use ($app) {
-        $sales = Sales::find();
+        $paginator = new Paginator($app->request->get('page', 'int', 1), 5, 30);
+
+        $sales = Sales::find([
+            'offset' => $paginator->getOffset(),
+            'limit' => $paginator->getLimit(),
+            'order' => 'id ASC',
+        ]);
         return new HttpResponse($sales, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
@@ -395,7 +342,6 @@ $app->get(
             }
         }
         return new HttpResponse($data, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
-
     }
 );
 
@@ -429,7 +375,6 @@ $app->put(
     }
 );
 
-
 $app->post(
     '/api/product',
     function () use ($app) {
@@ -454,7 +399,13 @@ $app->post(
 $app->get(
     '/api/product',
     function () use ($app) {
-        $product = Product::find();
+        $paginator = new Paginator($app->request->get('page', 'int', 1), 5, 30);
+
+        $product = Product::find([
+            'offset' => $paginator->getOffset(),
+            'limit' => $paginator->getLimit(),
+            'order' => 'id ASC',
+        ]);
         return new HttpResponse($product, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
@@ -535,8 +486,13 @@ $app->post(
 $app->get(
     '/api/patient',
     function () use ($app) {
-        $patient = Patient::find();
+        $paginator = new Paginator($app->request->get('page', 'int', 1), 5, 30);
 
+        $patient = Patient::find([
+            'offset' => $paginator->getOffset(),
+            'limit' => $paginator->getLimit(),
+            'order' => 'id ASC',
+        ]);
         return new HttpResponse($patient, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
@@ -613,7 +569,13 @@ $app->post(
 $app->get(
     '/api/company',
     function () use ($app) {
-        $company = Company::find();
+        $paginator = new Paginator($app->request->get('page', 'int', 1), 5, 30);
+
+        $company = Company::find([
+            'offset' => $paginator->getOffset(),
+            'limit' => $paginator->getLimit(),
+            'order' => 'id ASC',
+        ]);
         return new HttpResponse($company, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
@@ -683,7 +645,13 @@ $app->post(
 $app->get(
     '/api/category',
     function () use ($app) {
-        $category = Category::find();
+        $paginator = new Paginator($app->request->get('page', 'int', 1), 5, 30);
+
+        $category = Category::find([
+            'offset' => $paginator->getOffset(),
+            'limit' => $paginator->getLimit(),
+            'order' => 'id ASC',
+        ]);
         return new HttpResponse($category, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );

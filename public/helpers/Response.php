@@ -1,6 +1,6 @@
 <?php
 
-namespace Sevo\Response;
+namespace Sevo\Helper;
 
 class Response
 {

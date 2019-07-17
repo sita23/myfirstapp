@@ -57,18 +57,6 @@ class User extends Model
         $this->last_modified_at = date('Y-m-d H:i:s');
     }
 
-    public function beforeCreate()
-    {
-        // Set the creation date
-        //$this->created_at = date('Y-m-d H:i:s');
-    }
-
-    public function beforeUpdate()
-    {
-        // Set the modification date
-        //$this->last_modified_at = date('Y-m-d H:i:s');
-    }
-
     public function getSource()
     {
         return 'user';

@@ -1,9 +1,10 @@
 <?php
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Sevo\Model;
 
 use Phalcon\Mvc\Model;
+
 class Sales extends Model
 {
     protected $id;
@@ -71,6 +72,7 @@ class Sales extends Model
     {
         $this->patient_id = $patient_id;
     }
+
     /**
      * @return mixed
      */
