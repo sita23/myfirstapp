@@ -12,8 +12,10 @@ use Sevo\Model\User;
 use Sevo\Model\Product;
 use Sevo\Model\Patient;
 use Sevo\Model\Company;
+use Sevo\Model\CompanyProduct;
 use Sevo\Helper\Response as HttpResponse;
 use Sevo\Helper\Paginator;
+
 
 $loader = new Loader();
 
@@ -699,4 +701,83 @@ $app->delete(
     }
 );
 
+$app->post(
+    '/api/company_product',
+    function () use ($app) {
+        $company_productObject = $app->request->getJsonRawBody();
+        $company_product = new CompanyProduct();
+
+        $company_product->setTotal($company_productObject->total);
+
+        if ($company_product->save() === false) {
+            $messages = $company_product->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($company_product, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
+    }
+);
+
+$app->get(
+    '/api/company_product/{id:[0-9]+}',
+    function ($id) {
+        /** @var CompanyProduct $company_product */
+        $company_product = CompanyProduct::findFirst($id);
+        if (!$company_product) {
+            return new HttpResponse($company_product, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
+        }
+        $data = $company_product->toArray();
+
+        $data['rel_company'] = [];
+        if ($company_product->getCompany() instanceof Company) {
+            $data['rel_company'] = $company_product->getCompany()->toArray();
+        }
+        return new HttpResponse($data, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
+    }
+);
+
+$app->get(
+    '/api/company_product',
+    function () use ($app) {
+        $paginator = new Paginator($app->request->get('page', 'int', 1), 5, 30);
+
+        $company_product = CompanyProduct::find([
+            'offset' => $paginator->getOffset(),
+            'limit' => $paginator->getLimit(),
+            'order' => 'id ASC',
+        ]);
+        return new HttpResponse($company_product, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
+    }
+);
+
+$app->put(
+    '/api/company_product/{id:[0-9]+}',
+    function ($id) use ($app) {
+        $company_productObject = $app->request->getJsonRawBody();
+
+        /** @var CompanyProduct $company_product */
+        $company_product = CompanyProduct::findfirst($id);
+
+        $company_product->setTotal($company_productObject->total);
+
+        if ($company_product->update() === false) {
+            $messages = $company_product->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($company_product, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
+    }
+);
+
+$app->delete(
+    '/api/company_product/{id:[0-9]+}',
+    function ($id) {
+        $company_product = Category::findFirst($id);
+        if (empty($company_product)) {
+            return new HttpResponse($company_product, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
+        }
+
+        if ($company_product->delete()) {
+            return new HttpResponse('', HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
+        }
+    }
+);
 $app->handle();
