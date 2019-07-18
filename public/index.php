@@ -186,6 +186,8 @@ $app->put(
         $user->setEmail($userObject->email);
         $user->setPassword($userObject->password);
 
+        $user->update();
+
         return new HttpResponse($user, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
@@ -701,7 +703,7 @@ $app->delete(
 );
 
 $app->post(
-    '/api/company_product',
+    '/api/company-product',
     function () use ($app) {
         $company_productObject = $app->request->getJsonRawBody();
         $company_product = new CompanyProduct();
@@ -717,7 +719,7 @@ $app->post(
 );
 
 $app->get(
-    '/api/company_product/{id:[0-9]+}',
+    '/api/company-product/{id:[0-9]+}',
     function ($id) {
         /** @var CompanyProduct $company_product */
         $company_product = CompanyProduct::findFirst($id);
@@ -739,7 +741,7 @@ $app->get(
 );
 
 $app->get(
-    '/api/company_product',
+    '/api/company-product',
     function () use ($app) {
         $paginator = new Paginator($app->request->get('page', 'int', 1), 5, 30);
 
@@ -753,7 +755,7 @@ $app->get(
 );
 
 $app->put(
-    '/api/company_product/{id:[0-9]+}',
+    '/api/company-product/{id:[0-9]+}',
     function ($id) use ($app) {
         $company_productObject = $app->request->getJsonRawBody();
 
@@ -771,7 +773,7 @@ $app->put(
 );
 
 $app->delete(
-    '/api/company_product/{id:[0-9]+}',
+    '/api/company-product/{id:[0-9]+}',
     function ($id) {
         $company_product = Category::findFirst($id);
         if (empty($company_product)) {

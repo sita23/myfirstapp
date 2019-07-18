@@ -102,6 +102,9 @@ RUN apk add --update \
 	php7-simplexml \
 	php7-xmlwriter
 
+# Composer
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
+
 #RUN mkdir -p /run/nginx
 #RUN mkdir -p /run/php
 

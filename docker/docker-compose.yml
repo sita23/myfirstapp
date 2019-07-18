@@ -11,6 +11,18 @@ services:
     ports:
       - "8091:80"
 
+  clientapp:
+    build: ./
+    working_dir: /var/www/html/public
+    container_name: clientapp
+    restart: always
+    links:
+      - firstapp
+    volumes:
+      - ../client:/var/www/html/public
+    ports:
+      - "8092:80"
+
   db:
     image: mysql:5.7
     restart: always
