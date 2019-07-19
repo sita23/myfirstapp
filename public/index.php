@@ -186,9 +186,11 @@ $app->put(
         $user->setEmail($userObject->email);
         $user->setPassword($userObject->password);
 
-        $user->update();
-
-        return new HttpResponse($user, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
+        if ($user->update() === false) {
+            $messages = $user->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+        return new HttpResponse($user, HttpResponse::HTTP_CREATED, HttpResponse::$statusTexts[HttpResponse::HTTP_CREATED]);
     }
 );
 

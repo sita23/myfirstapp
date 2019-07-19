@@ -1,5 +1,5 @@
 <?php
-include_once 'vendor/autoload.php';
+include_once '../vendor/autoload.php';
 
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\RequestException as HttpRequestException;
@@ -40,7 +40,7 @@ $response = json_decode($request->getBody()->getContents(), true);
     <div class="row justify-content-md-center">
         <div class="col-md-8">
 
-            <a class="btn btn-success float-right" href="#" role="button">Ekle</a>
+            <a class="btn btn-success float-right" href="create.php" role="button">Ekle</a>
             <table class="table table-dark">
                 <thead>
                 <tr>
@@ -63,8 +63,8 @@ $response = json_decode($request->getBody()->getContents(), true);
                     <td><?=$item['email']?></td>
                     <td><?=$item['created_at']?></td>
                     <td><?=$item['last_modified_at']?></td>
-                    <td><a class="btn btn-primary" href="user/update.php?id=<?=$item['id']?>" role="button">Güncelle</a></td>
-                    <td><a class="btn btn-danger" href="#" role="button">Sil</a></td>
+                    <td><a class="btn btn-primary" href="update.php?id=<?=$item['id']?>" role="button">Güncelle</a></td>
+                    <td><a class="btn btn-danger" href="delete.php?id=<?=$item['id']?>" role="button">Sil</a></td>
                 </tr>
                 <? endforeach;?>
                 </tbody>

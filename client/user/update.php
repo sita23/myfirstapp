@@ -4,6 +4,7 @@ include_once '../vendor/autoload.php';
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
 
+
 if (isset($_GET['id'])){
     $userId = $_GET['id'];
 
@@ -28,7 +29,7 @@ if (isset($_GET['id'])){
         //echo json_encode($response);
     } catch (ClientException $e) {
         if ($e->getCode() === 404) {
-            header("Location: ../");
+            header("Location: index.php");
         }
     }
 
@@ -40,11 +41,13 @@ if (isset($_GET['id'])){
                 'password' =>$_POST['password']
             ]
         ]);
-        $response->getStatusCode();
+
+
+        if ($response->getStatusCode() == 201) {
+            header("Refresh:0");
+
+        }
     }
-
-
-
 
 ?>
 <html>
@@ -79,6 +82,7 @@ if (isset($_GET['id'])){
         </form>
         </body>
 </html>
+
 <?php
 } else {
     header("Location: ../");
