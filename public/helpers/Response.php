@@ -164,6 +164,18 @@ class Response
                 }
             }
         }
+        if ($content instanceof \Phalcon\Validation\Message\Group) {
+            $validationMsg = [];
+            foreach ($content as $message) {
+                $validationMsg = [
+                    'message' => $message->getMessage(),
+                    'field' => $message->getField(),
+                    'type' => $message->getType(),
+                ];
+            }
+            $this->content = $validationMsg;
+            return $this;
+        }
         $this->content = $content;
         return $this;
     }

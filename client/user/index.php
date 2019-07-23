@@ -28,15 +28,37 @@ $response = json_decode($request->getBody()->getContents(), true);
 ?>
 <html>
  <head>
+     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
      <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
  </head>
     <body>
+    <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+
+        <a class="navbar-brand" href="https://www.istanbuleczaciodasi.org.tr/nobetci-eczane/mobile.php#nobet-select-method">Pharmacy</a>
+
+
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost:8092/user/index.php">User</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost:8092/sgk/index.php">Sgk</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost:8092/company/index.php">Company</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="http://localhost:8092/company/index.php">Product</a>
+            </li>
+        </ul>
+    </nav>
     <pre>
 
-
-
-    </pre>
+</pre>
     <div class="row justify-content-md-center">
         <div class="col-md-8">
 

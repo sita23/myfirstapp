@@ -130,6 +130,35 @@ $app->get(
         echo "Dizi içerisinde bulunan eleman sayısı " . $diziSayisi;
     }
 );
+$app->post(
+    '/api/login',
+    function () use ($app) {
+        $LoginRequestObject = $app->request->getJsonRawBody();
+        $LoginValidation = new \Sevo\Validation\LoginValidation();
+        $messages = $LoginValidation->validate($LoginRequestObject);
+
+        if (count($messages)) {
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+
+        $user = User::findFirst(
+            [
+                'conditions' => 'email = ?1 AND password = ?2',
+                'bind'       => [
+                    1 => $LoginRequestObject->email,
+                    2 => $LoginRequestObject->password,
+                ]
+            ]
+        );
+        if (!$user) {
+            return new HttpResponse('', HttpResponse::HTTP_UNAUTHORIZED, HttpResponse::$statusTexts[HttpResponse::HTTP_UNAUTHORIZED]);
+        }
+
+        return new HttpResponse($user);
+    }
+);
+
+
 
 $app->get(
     '/api/user',
@@ -223,7 +252,7 @@ $app->get(
 $app->get(
     '/api/sgk',
     function () use ($app) {
-        $paginator = new Paginator($app->request->get('page', 'int', 1), 5, 30);
+        $paginator = new Paginator($app->request->get('page', 'int', 1), 4, 30);
 
         $sgk = Sgk::find([
             'offset' => $paginator->getOffset(),
@@ -443,6 +472,7 @@ $app->put(
         /** @var Product $product */
         $product = Product::findfirst($id);
 
+        $product->setName($productObject->name);
         $product->setStock($productObject->stock);
         $product->setConsumptionDate($productObject->consumption_date);
         $product->setProductionDate($productObject->production_date);
@@ -607,7 +637,7 @@ $app->put(
 
         $company->setName($companyObject->name);
         $company->setPhoneNumber($companyObject->phone_number);
-        $company->setCreatedAt(date('Y-m-d H:i:s'));
+
 
         if ($company->update() === false) {
             $messages = $company->getMessages();

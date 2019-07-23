@@ -2,6 +2,7 @@
 include_once '../vendor/autoload.php';
 
 use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\Exception\RequestException as HttpRequestException;
 
 $host = "http://firstapp";
 $token = "";
@@ -21,14 +22,12 @@ $page = 1;
 if (!empty($_GET['page'])) {
     $page = $_GET['page'];
 }
-$request = $client->request("GET", "/api/sgk?page=". $page);
+$request = $client->request("GET", "/api/company?page=". $page);
 $response = json_decode($request->getBody()->getContents(), true);
-
 
 $kayitSayi = 10;
 $toplamSayfa =4;
 ?>
-
 <html>
 <head>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
@@ -62,53 +61,53 @@ $toplamSayfa =4;
 <pre>
 
 </pre>
-    <div class="row justify-content-md-center">
-        <div class="col-md-4">
-            <td><a class="btn btn-success float-right" href="create.php" role="button">Ekle</a></td>
+<div class="row justify-content-md-center">
+    <div class="col-md-8">
 
-            <table class="table table-dark">
-                <thead>
+        <a class="btn btn-success float-right" href="create.php" role="button">Ekle</a>
+        <table class="table table-dark">
+            <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Adı</th>
+                <th scope="col">Telefon Numarası</th>
+                <th scope="col">Oluşturulma Tarihi</th>
+                <th scope="col">Son Güncelleştirilme Tarihi</th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($response as $item):?>
                 <tr>
-
-                    <th scope="col">ID</th>
-                    <th scope="col">Sgk Adı</th>
-
-                    <th scope="col"></th>
-                    <th scope="col"></th>
+                    <th scope="row"><?=$item['id']?></th>
+                    <td><?=$item['name']?></td>
+                    <td><?=$item['phone_number']?></td>
+                    <td><?=$item['created_at']?></td>
+                    <td><?=$item['last_modified_at']?></td>
+                    <td><a class="btn btn-primary" href="update.php?id=<?=$item['id']?>" role="button">Güncelle</a></td>
+                    <td><a class="btn btn-danger" href="delete.php?id=<?=$item['id']?>" role="button">Sil</a></td>
                 </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($response as $item):?>
-                    <tr>
-                        <th scope="row"><?=$item['id']?></th>
-                        <td><?=$item['name']?></td>
+            <? endforeach;?>
+            </tbody>
+        </table>
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
 
-                        <td><a class="btn btn-primary" href="update.php?id=<?=$item['id']?>" role="button">Güncelle</a></td>
-                        <td><a class="btn btn-danger" href="delete.php?id=<?=$item['id']?>" role="button">Sil</a></td>
-                    </tr>
-                <? endforeach;?>
-                </tbody>
-            </table>
-            <pre>
+                <li class="page-item <?=$page==1?'disabled':'enabled'?>">
+                    <a class="page-link" href="#" tabindex="-1"><</a>
+                </li>
+                <?php for($i = 1; $i <= $toplamSayfa; $i++): ?>
+                    <li class="page-item <?=$page==$i?'active':''?>"><a class="page-link" href="index.php?page=<?=$i?>"><?=$i?></a></li>
+                <? endfor;?>
 
-            </pre>
-            <nav aria-label="Page navigation example">
-                <ul class="pagination justify-content-center">
+                <li class="page-item <?=$page==$toplamSayfa?'disabled':'enabled'?>">
+                    <a class="page-link" href="#">></a>
+                </li>
 
-                        <li class="page-item <?=$page==1?'disabled':'enabled'?>">
-                            <a class="page-link" href="#" tabindex="-1"><</a>
-                        </li>
-                        <?php for($i = 1; $i <= $toplamSayfa; $i++): ?>
-                             <li class="page-item <?=$page==$i?'active':''?>"><a class="page-link" href="index.php?page=<?=$i?>"><?=$i?></a></li>
-                        <? endfor;?>
-
-                            <li class="page-item <?=$page==$toplamSayfa?'disabled':'enabled'?>">
-                            <a class="page-link" href="#">></a>
-                            </li>
-
-                </ul>
-            </nav>
-        </div>
+            </ul>
+        </nav>
     </div>
+</div>
 </body>
 </html>
