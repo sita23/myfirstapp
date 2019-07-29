@@ -2,17 +2,23 @@
 
 namespace Sevo\Model;
 
-use Phalcon\Mvc\Model;
 use Phalcon\Validation;
 use Phalcon\Validation\Validator\Uniqueness;
 use Phalcon\Validation\Validator\InclusionIn;
-
+use Phalcon\Security\Random;
 class CompanyProduct extends Model
 {
     protected $id;
     protected $company_id;
     protected $product_id;
     protected $total;
+    protected $uuid;
+
+    public function beforeValidationOnCreate()
+    {
+        $this->generateUuid();
+    }
+
 
     /** @var Company $_Company */
 
@@ -36,6 +42,22 @@ class CompanyProduct extends Model
                 'alias' => '_Product',
             ]
         );
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUuid()
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @param mixed $uuid
+     */
+    public function setUuid($uuid): void
+    {
+        $this->uuid = $uuid;
     }
 
     /**

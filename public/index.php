@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Europe/Istanbul');
 
 use Phalcon\Loader;
 use Phalcon\Mvc\Micro;
@@ -8,6 +9,7 @@ use Phalcon\Db\Adapter\Pdo\Mysql as PdoMysql;
 use Sevo\Model\Category;
 use Sevo\Model\Sales;
 use Sevo\Model\Sgk;
+use Sevo\Model\Token;
 use Sevo\Model\User;
 use Sevo\Model\Product;
 use Sevo\Model\Patient;
@@ -15,6 +17,7 @@ use Sevo\Model\Company;
 use Sevo\Model\CompanyProduct;
 use Sevo\Helper\Response as HttpResponse;
 use Sevo\Helper\Paginator;
+use Phalcon\Paginator\Adapter\Model as PaginatorModel;
 
 $loader = new Loader();
 
@@ -154,7 +157,30 @@ $app->post(
             return new HttpResponse('', HttpResponse::HTTP_UNAUTHORIZED, HttpResponse::$statusTexts[HttpResponse::HTTP_UNAUTHORIZED]);
         }
 
-        return new HttpResponse($user);
+        $token = new Token();
+
+        $tokenText = md5(time() . uniqid(md5($LoginRequestObject->email. rand(1000, 9999))));
+
+        $expiredMinute = 60;
+
+        $expirationDate = new DateTime();
+        $expirationDate->add(new DateInterval('PT' . $expiredMinute . 'M'));
+
+        $token->setToken($tokenText);
+        $token->setExpirationDate($expirationDate->format('Y-m-d H:i:s'));
+        $token->setStatus(1);
+        $token->setUserId($user->getId());
+
+        if ($token->save() === false) {
+            $messages = $token->getMessages();
+            return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
+        }
+
+        return new HttpResponse([
+            'token' => $tokenText,
+            'expired' => $expirationDate->format('Y-m-dTH:i:s'),
+        ]);
+
     }
 );
 
@@ -168,16 +194,23 @@ $app->get(
         $user = User::find([
             'offset' => $paginator->getOffset(),
             'limit' => $paginator->getLimit(),
-            'order' => 'id ASC',
+            'order' => 'created_at DESC',
         ]);
         return new HttpResponse($user, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
 $app->get(
-    '/api/user/{id:[0-9]+}',
+    '/api/user/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
-        $user = User::findFirst($id);
+        $user = User::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (!$user) {
             return new HttpResponse('', HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -205,15 +238,24 @@ $app->post(
 );
 
 $app->put(
-    '/api/user/{id:[0-9]+}',
+    '/api/user/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) use ($app) {
         $userObject = $app->request->getJsonRawBody();
 
         /** @var User $user */
-        $user = User::findFirst($id);
+        $user = Company::findfirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
+
         $user->setUserName($userObject->user_name);
         $user->setEmail($userObject->email);
         $user->setPassword($userObject->password);
+
 
         if ($user->update() === false) {
             $messages = $user->getMessages();
@@ -223,10 +265,19 @@ $app->put(
     }
 );
 
+
+
 $app->delete(
-    '/api/user/{id:[0-9]+}',
+    '/api/user/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
-        $user = User::findFirst($id);
+        $user = User::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
 
         if (empty($user)) {
             return new HttpResponse($user, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
@@ -252,21 +303,38 @@ $app->get(
 $app->get(
     '/api/sgk',
     function () use ($app) {
-        $paginator = new Paginator($app->request->get('page', 'int', 1), 4, 30);
-
+        $currentPage = $app->request->get('page', 'int', 1);
         $sgk = Sgk::find([
-            'offset' => $paginator->getOffset(),
-            'limit' => $paginator->getLimit(),
-            'order' => 'id ASC',
+            'conditions' => 'name = ?1',
+            'bind'       => [
+                1 => 'sgk',
+            ]
         ]);
-        return new HttpResponse($sgk, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
+
+        $paginator = new PaginatorModel(
+            [
+                'data'  => $sgk,
+                'limit' => 1,
+                'page'  => $currentPage,
+            ]
+        );
+        $page = $paginator->getPaginate();
+
+        return new HttpResponse($page, HttpResponse::HTTP_OK, HttpResponse::$statusTexts[HttpResponse::HTTP_OK]);
     }
 );
 
 $app->get(
-    '/api/sgk/{id:[0-9]+}',
+    '/api/sgk/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
-        $sgk = Sgk::findFirst($id);
+        $sgk = Sgk::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (!$sgk) {
             return new HttpResponse('', HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -292,12 +360,19 @@ $app->post(
 );
 
 $app->put(
-    '/api/sgk/{id:[0-9]+}',
+    '/api/sgk/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) use ($app) {
         $sgkObject = $app->request->getJsonRawBody();
 
         /** @var Sgk $sgk */
-        $sgk = Sgk::findFirst($id);
+        $sgk = Sgk::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         $sgk->setName($sgkObject->name);
 
         if ($sgk->update() === false) {
@@ -309,9 +384,16 @@ $app->put(
 );
 
 $app->delete(
-    '/api/sgk/{id:[0-9]+}',
+    '/api/sgk/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
-        $sgk = Sgk::findfirst($id);
+        $sgk = Sgk::findfirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (empty($sgk)) {
             return new HttpResponse($sgk, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -359,10 +441,17 @@ $app->get(
 );
 
 $app->get(
-    '/api/sales/{id:[0-9]+}',
+    '/api/sales/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
         /** @var Sales $sales */
-        $sales = Sales::findFirst($id);
+        $sales = Sales::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (!$sales) {
             return new HttpResponse('', HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -380,9 +469,16 @@ $app->get(
 );
 
 $app->delete(
-    '/api/sales/{id:[0-9]+}',
+    '/api/sales/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
-        $sales = Sales::findfirst($id);
+        $sales = Sales::findfirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (empty($sales)) {
             return new HttpResponse($sales, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -393,12 +489,19 @@ $app->delete(
 );
 
 $app->put(
-    '/api/sales/{id:[0-9]+}',
+    '/api/sales/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) use ($app) {
         $salesObject = $app->request->getJsonRawBody();
 
         /** @var Sales $sales */
-        $sales = Sales::findFirst($id);
+        $sales = Sales::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         $sales->setTotal($salesObject->total);
 
         if ($sales->update() === false) {
@@ -445,10 +548,17 @@ $app->get(
 );
 
 $app->get(
-    '/api/product/{id:[0-9]+}',
+    '/api/product/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
         /** @var Product $product */
-        $product = Product::findFirst($id);
+        $product = Product::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (!$product) {
             return new HttpResponse($product, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -465,12 +575,19 @@ $app->get(
 );
 
 $app->put(
-    '/api/product/{id:[0-9]+}',
+    '/api/product/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) use ($app) {
         $productObject = $app->request->getJsonRawBody();
 
         /** @var Product $product */
-        $product = Product::findfirst($id);
+        $product = Product::findfirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
 
         $product->setName($productObject->name);
         $product->setStock($productObject->stock);
@@ -487,9 +604,16 @@ $app->put(
 );
 
 $app->delete(
-    '/api/product/{id:[0-9]+}',
+    '/api/product/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
-        $product = Product::findFirst($id);
+        $product = Product::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (empty($product)) {
             return new HttpResponse($product, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -533,10 +657,17 @@ $app->get(
 );
 
 $app->get(
-    '/api/patient/{id:[0-9]+}',
+    '/api/patient/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
         /** @var Patient $patient */
-        $patient = Patient::findFirst($id);
+        $patient = Patient::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (!$patient) {
             return new HttpResponse($patient, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -551,12 +682,19 @@ $app->get(
 );
 
 $app->put(
-    '/api/patient/{id:[0-9]+}',
+    '/api/patient/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) use ($app) {
         $patientObject = $app->request->getJsonRawBody();
 
         /** @var Patient $patient */
-        $patient = Patient::findfirst($id);
+        $patient = Patient::findfirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
 
         $patient->setTc($patientObject->tc);
         $patient->setSurName($patientObject->surname);
@@ -572,7 +710,7 @@ $app->put(
 );
 
 $app->delete(
-    '/api/patient/{id:[0-9]+}',
+    '/api/patient/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
         $patient = Patient::findFirst($id);
         if (empty($patient)) {
@@ -616,9 +754,16 @@ $app->get(
 );
 
 $app->get(
-    '/api/company/{id:[0-9]+}',
+    '/api/company/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
-        $company = Company::findFirst($id);
+        $company = Company::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (!$company) {
             return new HttpResponse('', HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -628,12 +773,19 @@ $app->get(
 );
 
 $app->put(
-    '/api/company/{id:[0-9]+}',
+    '/api/company/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) use ($app) {
         $companyObject = $app->request->getJsonRawBody();
 
         /** @var Company $company */
-        $company = Company::findfirst($id);
+        $company = Company::findfirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
 
         $company->setName($companyObject->name);
         $company->setPhoneNumber($companyObject->phone_number);
@@ -648,9 +800,16 @@ $app->put(
 );
 
 $app->delete(
-    '/api/company/{id:[0-9]+}',
+    '/api/company/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
-        $company = Company::findFirst($id);
+        $company = Company::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (empty($company)) {
             return new HttpResponse($company, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -692,9 +851,16 @@ $app->get(
 );
 
 $app->get(
-    '/api/category/{id:[0-9]+}',
+    '/api/category/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
-        $category = Category::findFirst($id);
+        $category = Category::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (!$category) {
             return new HttpResponse('', HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -703,12 +869,19 @@ $app->get(
 );
 
 $app->put(
-    '/api/category/{id:[0-9]+}',
+    '/api/category/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) use ($app) {
         $categoryObject = $app->request->getJsonRawBody();
 
         /** @var Category $category */
-        $category = Category::findfirst($id);
+        $category = Category::findfirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
 
         $category->setName($categoryObject->name);
 
@@ -721,9 +894,16 @@ $app->put(
 );
 
 $app->delete(
-    '/api/category/{id:[0-9]+}',
+    '/api/category/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
-        $category = Category::findFirst($id);
+        $category = Category::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (empty($category)) {
             return new HttpResponse($category, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -751,10 +931,17 @@ $app->post(
 );
 
 $app->get(
-    '/api/company-product/{id:[0-9]+}',
+    '/api/company-product/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
         /** @var CompanyProduct $company_product */
-        $company_product = CompanyProduct::findFirst($id);
+        $company_product = CompanyProduct::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
         if (!$company_product) {
             return new HttpResponse($company_product, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }
@@ -787,12 +974,19 @@ $app->get(
 );
 
 $app->put(
-    '/api/company-product/{id:[0-9]+}',
+    '/api/company-product/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) use ($app) {
         $company_productObject = $app->request->getJsonRawBody();
 
         /** @var CompanyProduct $company_product */
-        $company_product = CompanyProduct::findfirst($id);
+        $company_product = CompanyProduct::findfirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+        );
 
         $company_product->setTotal($company_productObject->total);
 
@@ -805,9 +999,16 @@ $app->put(
 );
 
 $app->delete(
-    '/api/company-product/{id:[0-9]+}',
+    '/api/company-product/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
-        $company_product = Category::findFirst($id);
+        $company_product = Category::findFirst(
+            [
+                'conditions' => 'uuid = ?1',
+                'bind'       => [
+                    1 => $id,
+                ]
+            ]
+            );
         if (empty($company_product)) {
             return new HttpResponse($company_product, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }

@@ -2,11 +2,17 @@
 
 namespace Sevo\Model;
 
-use Phalcon\Mvc\Model;
+use Phalcon\Security\Random;
 class Category extends Model
 {
     protected $id;
     protected $name;
+    protected $uuid;
+
+    public function beforeValidationOnCreate()
+    {
+        $this->generateUuid();
+    }
 
     public function initialize()
     {
@@ -15,6 +21,21 @@ class Category extends Model
             'Product',
             'category_id'
         );
+    }
+    /**
+     * @return mixed
+     */
+    public function getUuid()
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @param mixed $uuid
+     */
+    public function setUuid($uuid): void
+    {
+        $this->uuid = $uuid;
     }
 
     /**
@@ -48,4 +69,6 @@ class Category extends Model
     {
         $this->name = $name;
     }
+
+
 }

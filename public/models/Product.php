@@ -2,10 +2,9 @@
 
 namespace Sevo\Model;
 
-use Phalcon\Mvc\Model;
 use Phalcon\Validation;
 use Phalcon\Validation\Validator\Uniqueness;
-
+use Phalcon\Security\Random;
 class Product extends Model
 {
     protected $id;
@@ -17,6 +16,7 @@ class Product extends Model
     protected $last_modified_at;
     protected $price;
     protected $category_id;
+    protected $uuid;
 
     public function validation()
     {
@@ -36,6 +36,7 @@ class Product extends Model
     public function beforeValidationOnCreate()
     {
         $this->created_at = date('Y-m-d H:i:s');
+        $this->generateUuid();
     }
 
     public function beforeValidationOnUpdate()
@@ -53,6 +54,22 @@ class Product extends Model
     {
         // Set the modification date
         //$this->last_modified_at = date('Y-m-d H:i:s');
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUuid()
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @param mixed $uuid
+     */
+    public function setUuid($uuid): void
+    {
+        $this->uuid = $uuid;
     }
 
     /** @var Category $_Category */

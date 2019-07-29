@@ -1,11 +1,17 @@
 <?php
 namespace Sevo\Model;
 
-use Phalcon\Mvc\Model;
+use Phalcon\Security\Random;
 class Sgk extends Model
 {
     protected $id;
     protected $name;
+    protected $uuid;
+
+    public function beforeValidationOnCreate()
+    {
+        $this->generateUuid();
+    }
 
     public function initialize()
     {
@@ -46,6 +52,22 @@ class Sgk extends Model
     public function setName($name)
     {
         $this->name = $name;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUuid()
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @param mixed $uuid
+     */
+    public function setUuid($uuid): void
+    {
+        $this->uuid = $uuid;
     }
 
 }

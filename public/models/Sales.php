@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace Sevo\Model;
 
-use Phalcon\Mvc\Model;
-
+use Phalcon\Security\Random;
 class Sales extends Model
 {
     protected $id;
@@ -12,9 +11,11 @@ class Sales extends Model
     protected $last_modified_at;
     protected $total;
     protected $patient_id;
+    protected $uuid;
 
     public function beforeValidationOnCreate()
     {
+        $this->generateUuid();
         $this->created_at = date('Y-m-d H:i:s');
     }
 
@@ -23,17 +24,6 @@ class Sales extends Model
         $this->last_modified_at = date('Y-m-d H:i:s');
     }
 
-    public function beforeCreate()
-    {
-        // Set the creation date
-        $this->created_at = date('Y-m-d H:i:s');
-    }
-
-    public function beforeUpdate()
-    {
-        // Set the modification date
-        $this->last_modified_at = date('Y-m-d H:i:s');
-    }
 
     /** @var Patient $_Patient */
 
@@ -47,6 +37,22 @@ class Sales extends Model
                 'alias' => '_Patient',
             ]
         );
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUuid()
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @param mixed $uuid
+     */
+    public function setUuid($uuid): void
+    {
+        $this->uuid = $uuid;
     }
 
     /**

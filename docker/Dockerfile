@@ -5,6 +5,9 @@ RUN apk update && apk upgrade
 RUN apk --update add make autoconf g++ gcc libc-dev curl ca-certificates \
 	&& apk --update add nginx git runit tzdata bash php7-dev file nginx-mod-http-headers-more
 
+RUN cp /usr/share/zoneinfo/Europe/Istanbul /etc/localtime
+RUN echo "Europe/Istanbul" >  /etc/timezone
+
 COPY tmp/cphalcon-3.4.4 /tmp/cphalcon-3.4.4
 
 WORKDIR /tmp

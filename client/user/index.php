@@ -38,7 +38,7 @@ $response = json_decode($request->getBody()->getContents(), true);
     <body>
     <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
 
-        <a class="navbar-brand" href="https://www.istanbuleczaciodasi.org.tr/nobetci-eczane/mobile.php#nobet-select-method">Pharmacy</a>
+       a <a class="navbr-brand" href="https://www.istanbuleczaciodasi.org.tr/nobetci-eczane/mobile.php#nobet-select-method">Pharmacy</a>
 
 
         <ul class="navbar-nav">
@@ -59,6 +59,7 @@ $response = json_decode($request->getBody()->getContents(), true);
     <pre>
 
 </pre>
+
     <div class="row justify-content-md-center">
         <div class="col-md-8">
 

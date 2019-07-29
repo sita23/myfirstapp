@@ -1,12 +1,11 @@
 <?php
 
-
 namespace Sevo\Model;
 
-use Phalcon\Mvc\Model;
 use Phalcon\Validation;
 use Phalcon\Validation\Validator\Uniqueness;
 use Phalcon\Validation\Validator\InclusionIn;
+use Phalcon\Security\Random;
 
 class Patient extends Model
 {
@@ -15,6 +14,13 @@ class Patient extends Model
     protected $surname;
     protected $address;
     protected $sgk_id;
+    protected $uuid;
+
+    public function beforeValidationOnCreate()
+    {
+        $this->generateUuid();
+    }
+
 
     public function validation()
     {
@@ -30,6 +36,7 @@ class Patient extends Model
         );
         return $this->validate($validator);
     }
+
     public function initialize()
     {
         $this->hasMany(

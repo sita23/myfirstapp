@@ -2,11 +2,10 @@
 
 namespace Sevo\Model;
 
-use Phalcon\Mvc\Model;
 use Phalcon\Validation;
 use Phalcon\Validation\Validator\Uniqueness;
 use Phalcon\Validation\Validator\InclusionIn;
-
+use Phalcon\Security\Random;
 class Company extends Model
 {
     protected $id;
@@ -14,6 +13,7 @@ class Company extends Model
     protected $phone_number;
     protected $created_at;
     protected $last_modified_at;
+    protected $uuid;
 
     public function validation()
     {
@@ -32,11 +32,28 @@ class Company extends Model
     public function beforeValidationOnCreate()
     {
         $this->created_at = date('Y-m-d H:i:s');
+        $this->generateUuid();
     }
 
     public function beforeValidationOnUpdate()
     {
         $this->last_modified_at = date('Y-m-d H:i:s');
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUuid()
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @param mixed $uuid
+     */
+    public function setUuid($uuid): void
+    {
+        $this->uuid = $uuid;
     }
 
 

@@ -1,0 +1,81 @@
+<div class="container-fluid">
+
+    <!-- Breadcrumbs-->
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="http://localhost:8092/sgk/index#">Sgk</a>
+        </li>
+        <li class="breadcrumb-item active">Liste</li>
+    </ol>
+
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <i class="fas fa-table"></i>
+            Sgk   <a class="btn-sm btn-success float-right" href="create.php" role="button">Ekle</a></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Sgk Adı</th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <th>ID</th>
+                        <th>Sgk Adı</th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    </tfoot>
+                    <tbody>
+                    <?php foreach ($response['items'] as $item):?>
+                        <tr>
+                            <th scope="row"><?=$item['id']?></th>
+                            <td><?=$item['name']?></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td><a class="btn-sm btn-primary" href="update.php?id=<?=$item['id']?>" role="button">Güncelle</a></td>
+                            <td><a class="btn-sm btn-danger" href="delete.php?id=<?=$item['id']?>" role="button">Sil</a></td>
+                        </tr>
+                    <? endforeach;?>
+                    </tbody>
+                </table>
+                <pre>
+
+            </pre>
+                <nav aria-label="Page navigation example">
+                    <ul class="pagination justify-content-center">
+
+                        <li class="page-item <?=$page==1?'disabled':'enabled'?>">
+                            <a class="page-link" href="#" tabindex="-1"><</a>
+                        </li>
+                        <?php for($i = 1; $i <= $response['total_pages']; $i++): ?>
+                            <li class="page-item <?=$page==$i?'active':''?>"><a class="page-link" href="index.php?page=<?=$i?>"><?=$i?></a></li>
+                        <? endfor;?>
+
+                        <li class="page-item <?=$page== $response['total_pages']?'disabled':'enabled'?>">
+                            <a class="page-link" href="#">></a>
+                        </li>
+
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div>
+    </div>
+</div>

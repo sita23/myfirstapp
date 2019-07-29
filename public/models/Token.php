@@ -3,15 +3,20 @@ declare(strict_types=1);
 
 namespace Sevo\Model;
 
-use Phalcon\Mvc\Model;
+use Phalcon\Validation;
+use Phalcon\Validation\Validator\Uniqueness;
+use Phalcon\Validation\Validator\InclusionIn;
 
 class Token extends Model
 {
+
     protected $id;
     protected $user_id;
     protected $token;
     protected $expiration_date;
     protected $status;
+    protected $created_at;
+    protected $uuid;
 
     public function initialize()
 {
@@ -30,6 +35,59 @@ class Token extends Model
         ]
     );
 }
+
+    public function validation()
+    {
+        $validator = new Validation();
+
+        $validator->add(
+            'token',
+            new Uniqueness(
+                [
+                    'message' => 'Kullanıcının tokenı benzersiz olmalı.',
+                ]
+            )
+        );
+        return $this->validate($validator);
+    }
+    public function beforeValidationOnCreate()
+    {
+        $this->created_at = date('Y-m-d H:i:s');
+        $this->generateUuid();
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUuid()
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @param mixed $uuid
+     */
+    public function setUuid($uuid): void
+    {
+        $this->uuid = $uuid;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCreatedAt()
+    {
+        return $this->created_at;
+    }
+
+    /**
+     * @param mixed $created_at
+     */
+    public function setCreatedAt($created_at): void
+    {
+        $this->created_at = $created_at;
+    }
+
 
     /**
      * @return mixed
@@ -110,6 +168,5 @@ class Token extends Model
     {
         $this->status = $status;
     }
-
 
 }

@@ -1,0 +1,61 @@
+<div class="container-fluid">
+
+    <!-- Breadcrumbs-->
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="#">Kullanıcılar</a>
+        </li>
+        <li class="breadcrumb-item active">Liste</li>
+    </ol>
+
+
+    <div class="card mb-3">
+        <div class="card-header"><i class="fas fa-table"></i>
+            Kullanıcılar     <a class="btn-sm btn-success float-right" href="/user/create" role="button">Ekle</a></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kullanıcı Adı</th>
+                        <th>Şifre</th>
+                        <th>E-posta</th>
+                        <th>Oluşturulma Tarihi</th>
+                        <th>Son Güncelleştirilme Tarihi</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kullanıcı Adı</th>
+                        <th>Şifre</th>
+                        <th>E-posta</th>
+                        <th>Oluşturulma Tarihi</th>
+                        <th>Son Güncelleştirilme Tarihi</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    </tfoot>
+                    <tbody>
+                    <?php foreach ($response as $item):?>
+                        <tr>
+                            <th scope="row"><?=$item['id']?></th>
+                            <td><?=$item['user_name']?></td>
+                            <td><?=$item['password']?></td>
+                            <td><?=$item['email']?></td>
+                            <td><?=$item['created_at']?></td>
+                            <td><?=$item['last_modified_at']?></td>
+                            <td><a class="btn-sm btn-primary" href="update.php?id=<?=$item['id']?>" role="button">Güncelle</a></td>
+                            <td><a class="btn-sm btn-danger" href="delete.php?id=<?=$item['id']?>" role="button">Sil</a></td>
+                        </tr>
+                    <? endforeach;?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div>
+    </div>
+</div>
