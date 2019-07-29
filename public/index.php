@@ -60,6 +60,39 @@ $app->notFound(
     }
 );
 
+$app->before(
+    function () use ($app) {
+        $app->authorizedToken = null;
+        $httpHeaders = $app->request->getHeaders();
+        if (isset($httpHeaders['Authorization'])) {
+
+            if (strpos($httpHeaders['Authorization'], 'Bearer') !== false || strpos($httpHeaders['Authorization'], 'bearer') !== false) {
+                $tokenTmp = explode(' ', $httpHeaders['Authorization']);
+                $tokenType = $tokenTmp[0];
+                $token = $tokenTmp[1];
+
+                /** @var Token $tokenModel */
+                $tokenModel = Token::findFirst([
+                    'conditions' => 'token = ?1 AND expiration_date > ?2 AND status = 1',
+                    'bind' => [
+                        1 => $token,
+                        2 => date("Y-m-d H:i:s"),
+                    ]
+                ]);
+
+                if (!$tokenModel) {
+                    $app->response->setStatusCode(401, "");
+                    $app->response->send();
+                    exit;
+                }
+
+                $app->authorizedToken = $tokenModel;
+            }
+        }
+        return true;
+    }
+);
+
 $app->after(
     function () use ($app) {
         $returnedValue = $app->getReturnedValue();
@@ -147,7 +180,7 @@ $app->post(
         $user = User::findFirst(
             [
                 'conditions' => 'email = ?1 AND password = ?2',
-                'bind'       => [
+                'bind' => [
                     1 => $LoginRequestObject->email,
                     2 => $LoginRequestObject->password,
                 ]
@@ -159,7 +192,7 @@ $app->post(
 
         $token = new Token();
 
-        $tokenText = md5(time() . uniqid(md5($LoginRequestObject->email. rand(1000, 9999))));
+        $tokenText = md5(time() . uniqid(md5($LoginRequestObject->email . rand(1000, 9999))));
 
         $expiredMinute = 60;
 
@@ -185,7 +218,6 @@ $app->post(
 );
 
 
-
 $app->get(
     '/api/user',
     function () use ($app) {
@@ -206,7 +238,7 @@ $app->get(
         $user = User::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -221,6 +253,9 @@ $app->get(
 $app->post(
     '/api/user',
     function () use ($app) {
+        var_dump($app->authorizedToken->User->getUserName());
+        // $data['rel_patient'] = $sales->getPatient()->toArray();
+
         // Getting a request instance
         $userObject = $app->request->getJsonRawBody();
 
@@ -246,7 +281,7 @@ $app->put(
         $user = Company::findfirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -266,14 +301,13 @@ $app->put(
 );
 
 
-
 $app->delete(
     '/api/user/{id:[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}',
     function ($id) {
         $user = User::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -306,16 +340,16 @@ $app->get(
         $currentPage = $app->request->get('page', 'int', 1);
         $sgk = Sgk::find([
             'conditions' => 'name = ?1',
-            'bind'       => [
+            'bind' => [
                 1 => 'sgk',
             ]
         ]);
 
         $paginator = new PaginatorModel(
             [
-                'data'  => $sgk,
+                'data' => $sgk,
                 'limit' => 1,
-                'page'  => $currentPage,
+                'page' => $currentPage,
             ]
         );
         $page = $paginator->getPaginate();
@@ -330,7 +364,7 @@ $app->get(
         $sgk = Sgk::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -368,7 +402,7 @@ $app->put(
         $sgk = Sgk::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -389,7 +423,7 @@ $app->delete(
         $sgk = Sgk::findfirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -447,7 +481,7 @@ $app->get(
         $sales = Sales::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -474,7 +508,7 @@ $app->delete(
         $sales = Sales::findfirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -497,7 +531,7 @@ $app->put(
         $sales = Sales::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -554,7 +588,7 @@ $app->get(
         $product = Product::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -583,7 +617,7 @@ $app->put(
         $product = Product::findfirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -609,7 +643,7 @@ $app->delete(
         $product = Product::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -663,7 +697,7 @@ $app->get(
         $patient = Patient::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -690,7 +724,7 @@ $app->put(
         $patient = Patient::findfirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -759,7 +793,7 @@ $app->get(
         $company = Company::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -781,7 +815,7 @@ $app->put(
         $company = Company::findfirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -805,7 +839,7 @@ $app->delete(
         $company = Company::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -856,7 +890,7 @@ $app->get(
         $category = Category::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -877,7 +911,7 @@ $app->put(
         $category = Category::findfirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -899,7 +933,7 @@ $app->delete(
         $category = Category::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -937,7 +971,7 @@ $app->get(
         $company_product = CompanyProduct::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -982,7 +1016,7 @@ $app->put(
         $company_product = CompanyProduct::findfirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
@@ -1004,11 +1038,11 @@ $app->delete(
         $company_product = Category::findFirst(
             [
                 'conditions' => 'uuid = ?1',
-                'bind'       => [
+                'bind' => [
                     1 => $id,
                 ]
             ]
-            );
+        );
         if (empty($company_product)) {
             return new HttpResponse($company_product, HttpResponse::HTTP_NOT_FOUND, HttpResponse::$statusTexts[HttpResponse::HTTP_NOT_FOUND]);
         }

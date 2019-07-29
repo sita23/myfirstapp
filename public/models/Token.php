@@ -31,7 +31,7 @@ class Token extends Model
         'Sevo\Model\User',
         'id',
         [
-            'alias' => '_User',
+            'alias' => 'User',
         ]
     );
 }
