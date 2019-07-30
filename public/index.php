@@ -65,10 +65,14 @@ $app->before(
         $app->authorizedToken = null;
         $httpHeaders = $app->request->getHeaders();
         if (isset($httpHeaders['Authorization'])) {
-
             if (strpos($httpHeaders['Authorization'], 'Bearer') !== false || strpos($httpHeaders['Authorization'], 'bearer') !== false) {
                 $tokenTmp = explode(' ', $httpHeaders['Authorization']);
                 $tokenType = $tokenTmp[0];
+                if (!isset($tokenTmp[1])) {
+                    $app->response->setStatusCode(401, "");
+                    $app->response->send();
+                    exit;
+                }
                 $token = $tokenTmp[1];
 
                 /** @var Token $tokenModel */
@@ -79,13 +83,11 @@ $app->before(
                         2 => date("Y-m-d H:i:s"),
                     ]
                 ]);
-
                 if (!$tokenModel) {
                     $app->response->setStatusCode(401, "");
                     $app->response->send();
                     exit;
                 }
-
                 $app->authorizedToken = $tokenModel;
             }
         }
@@ -253,7 +255,6 @@ $app->get(
 $app->post(
     '/api/user',
     function () use ($app) {
-        var_dump($app->authorizedToken->User->getUserName());
         // $data['rel_patient'] = $sales->getPatient()->toArray();
 
         // Getting a request instance
