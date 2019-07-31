@@ -8,7 +8,6 @@ class UserController extends Controller
 {
     public function indexAction()
     {
-
         $host = "http://firstapp";
         $token = "";
         $headers = [
@@ -31,7 +30,6 @@ class UserController extends Controller
         $response = json_decode($request->getBody()->getContents(), true);
 
         $this->view->response = $response;
-
     }
 
     public function createAction()

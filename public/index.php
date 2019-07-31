@@ -179,7 +179,7 @@ $app->post(
             return new HttpResponse($messages, HttpResponse::HTTP_BAD_REQUEST, HttpResponse::$statusTexts[HttpResponse::HTTP_BAD_REQUEST]);
         }
 
-        $user = User::findFirst(
+        $user = User::findfirst(
             [
                 'conditions' => 'email = ?1 AND password = ?2',
                 'bind' => [
@@ -215,10 +215,8 @@ $app->post(
             'token' => $tokenText,
             'expired' => $expirationDate->format('Y-m-dTH:i:s'),
         ]);
-
     }
 );
-
 
 $app->get(
     '/api/user',
